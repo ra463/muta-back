@@ -89,7 +89,17 @@ exports.registerUser = catchAsyncError(async (req, res, next) => {
 });
 
 exports.loginUser = catchAsyncError(async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, password, value } = req.body;
+
+  await axios
+    .post(
+      `https://www.google.com/recaptcha/api/siteverify/secret=${process.env.GOOGLE_SECRET_KEY}&response=${value}`,
+    )
+    .then((response) => {
+      if (!response.data.success) {
+        return next(new ErrorHandler("Captcha Failed", 400));
+      }
+    });
 
   if (!email || !password) {
     return next(new ErrorHandler("Please Enter Email & Password", 400));
