@@ -96,7 +96,9 @@ exports.verifyPayment = catchAsyncError(async (req, res, next) => {
   await transaction.save();
 
   const product = [order.product_details];
-  const pdf = await sendInvoice(product, user.email, user.name);
+  await sendInvoice(product, user.email, user.name);
 
-  res.redirect("https://muta-front.vercel .app");
+  res.status(200).json({
+    success: true,
+  });
 });
