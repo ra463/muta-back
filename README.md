@@ -2,7 +2,7 @@
 
 ## Setup Instructions
 
-1. Clone the repository.
+1. Clone the repository - `https://github.com/ra463/muta-back.git`.
 2. Install dependencies using `npm install`.
 3. Create the `config.env` in the config folder like this - `/config/config.env`.
 4. Configure environment variables:
@@ -20,7 +20,7 @@
    - `GOOGLE_CLIENT_SECRET` (google oauth client_secret)
    - `RAZORPAY_KEY_ID`
    - `RAZORPAY_KEY_SECRET` (razorpay key secret)
-   - `GOOGLE_SECRET_KEY` (google Recapta v2 secret key)
+   - `GOOGLE_SECRET_KEY` (google ReCaptcha v2 secret key)
 5. Start the server using `npm run dev`.
 
 ### Server Deployed Link - [https://muta-engine.adaptable.app]
