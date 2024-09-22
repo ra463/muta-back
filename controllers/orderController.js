@@ -100,5 +100,5 @@ exports.verifyPayment = catchAsyncError(async (req, res, next) => {
   console.log(pdf);
 
   // redirect to success page
-  res.redirect("http://localhost:3000");
+  res.redirect("https://muta-front.vercel.app");
 });
