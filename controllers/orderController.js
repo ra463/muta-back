@@ -12,7 +12,7 @@ dotenv.config({ path: "../config/config.env" });
 
 const instance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 exports.createOrder = catchAsyncError(async (req, res, next) => {
@@ -27,8 +27,8 @@ exports.createOrder = catchAsyncError(async (req, res, next) => {
     amount: Number(price * 100).toFixed(0), // amount is in paisa (lowest currency unit)
     currency: "INR",
   };
-  // const order = await instance.orders.create(options);
-  const order = null;
+
+  const order = await instance.orders.create(options);
 
   const newOrder = new Order({
     user: user._id,
@@ -45,7 +45,7 @@ exports.createOrder = catchAsyncError(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    order,
+    orderId: order.id,
   });
 });
 
@@ -89,20 +89,16 @@ exports.verifyPayment = catchAsyncError(async (req, res, next) => {
     status: "Completed",
   });
 
-  order.status = "Completed";
+  order.status = "completed";
   order.razorpay_signature = razorpay_signature;
 
   await order.save();
   await transaction.save();
 
   const product = [order.product_details];
-  await sendInvoice(product, user.email, user.name);
+  const pdf = await sendInvoice(product, user.email, user.name);
+  console.log(pdf);
 
   // redirect to success page
   res.redirect("http://localhost:3000");
-
-  res.status(200).json({
-    success: true,
-    message: "Payment Successfull",
-  });
 });

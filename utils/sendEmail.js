@@ -5,84 +5,71 @@ const os = require("os");
 const path = require("path");
 const { cacheDirectory } = require("../puppeteer.config.cjs");
 const dotenv = require("dotenv");
+const { Resend } = require("resend");
 
 dotenv.config({ path: "../config/config.env" });
 
-exports.resetPasswordCode = (email, name, code) => {
-  const smtpTransport = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL,
-      pass: process.env.PASSWORD,
-    },
-  });
+const resend = new Resend(process.env.RESEND_KEY);
 
-  const options = {
-    from: process.env.EMAIL,
+exports.resetPasswordCode = async (email, name, code) => {
+  const { data, error } = await resend.emails.send({
+    from: "Acme <onboarding@resend.dev>",
     to: email,
     subject: "Password Reset Code",
     html: `<div
-      class="container"
-      style="font-family: 'Roboto', sans-serif; margin: 0 auto"
+    class="container"
+    style="font-family: 'Roboto', sans-serif; margin: 0 auto"
+  >
+    <div class="head" style="display: flex; align-items: center">
+      <h2 style="margin: 0;padding: 0;margin-top: 5px;margin-left: 10px;padding-bottom: 16px">
+        Code for Resetting Your Password
+      </h2>
+    </div>
+    <div
+      class="row"
+      style="
+            padding: 1rem 0;
+            border-top: 1px solid #e5e5e5;
+            border-bottom: 1px solid #e5e5e5;
+            padding-top: 0;
+          "
     >
-      <div class="head" style="display: flex; align-items: center">
+      <div class="col-12" style="text-align: center">
         <img
-          src="https://res.cloudinary.com/drt2oqpbj/image/upload/v1688817758/finder_teqvxk.png"
-          alt=""
-          width="40px"
-          height="40px"
-          style="transform: translateY(10px);mix-blend-mode: multiply"
+          src="https://media.istockphoto.com/id/1338629648/vector/mail-approved-vector-flat-conceptual-icon-style-illustration-eps-10-file.jpg?s=612x612&w=0&k=20&c=o6AcZk3hB6ShxOzmssuOcsfh0QYEQVJ0nCuEZZj1_nQ="
+          alt="img"
+          style="width: 200px;mix-blend-mode: multiply"
         />
-        <h2 style="margin: 0;padding: 0;margin-top: 5px;margin-left: 10px;padding-bottom: 16px">
-          Code for Resetting Your Password
-        </h2>
+        <p style="font-weight: bold; padding: 0; margin: 0">
+          Hey ${name}, You have requested for resetting your password.
+        </p>
+        <p style="padding: 0; margin: 0">
+          Here is your code for resetting your password. Please enter this code to reset your password:
+        </p>
+        <p style="font-weight: bold;font-size: 1.5rem;padding: 0; margin: 0">
+          ${code}
+        </p>
+        <p style="padding-bottom: 0; margin-bottom: 0">
+          If you haven't requested this mail, then please contact us on our helpline number <span style="font-weight: bold">+91 1234567890</span>.
+        </p>
+        <p
+          style="
+                padding-bottom: 0;
+                margin-bottom: 0;
+                color: #949090;
+                font-size: 0.8rem;
+              "
+        >
+          Regards, Team <span style="color: #ff5c35">MutaEngine</span>
+        </p>
       </div>
-      <div
-        class="row"
-        style="
-              padding: 1rem 0;
-              border-top: 1px solid #e5e5e5;
-              border-bottom: 1px solid #e5e5e5;
-              padding-top: 0;
-            "
-      >
-        <div class="col-12" style="text-align: center">
-          <img
-            src="https://media.istockphoto.com/id/1338629648/vector/mail-approved-vector-flat-conceptual-icon-style-illustration-eps-10-file.jpg?s=612x612&w=0&k=20&c=o6AcZk3hB6ShxOzmssuOcsfh0QYEQVJ0nCuEZZj1_nQ="
-            alt="img"
-            style="width: 200px;mix-blend-mode: multiply"
-          />
-          <p style="font-weight: bold; padding: 0; margin: 0">
-            Hey ${name}, You have requested for resetting your password.
-          </p>
-          <p style="padding: 0; margin: 0">
-            Here is your code for resetting your password. Please enter this code to reset your password:
-          </p>
-          <p style="font-weight: bold;font-size: 1.5rem;padding: 0; margin: 0">
-            ${code}
-          </p>
-          <p style="padding-bottom: 0; margin-bottom: 0">
-            If you haven't requested this mail, then please contact us on our helpline number <span style="font-weight: bold">+91 1234567890</span>.
-          </p>
-          <p
-            style="
-                  padding-bottom: 0;
-                  margin-bottom: 0;
-                  color: #949090;
-                  font-size: 0.8rem;
-                "
-          >
-            Regards, Team <span style="color: #ff5c35">MutaEngine</span>
-          </p>
-        </div>
-      </div>
-    </div>`,
-  };
-
-  smtpTransport.sendMail(options, (err, res) => {
-    if (err) return err;
-    return res;
+    </div>
+  </div>`,
   });
+
+  if (error) {
+    return console.error({ error });
+  }
 };
 
 exports.sendInvoice = async (product, email, name) => {
@@ -96,9 +83,6 @@ exports.sendInvoice = async (product, email, name) => {
   grandtotal = alltotal + (alltotal * 18) / 100;
 
   try {
-    // const userDataDir = await fs.mkdtemp(
-    //   path.join(os.tmpdir(), "puppeteer_temp")
-    // );
     const browser = await puppeteer.launch({
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
@@ -238,89 +222,76 @@ exports.sendInvoice = async (product, email, name) => {
     </footer>`;
 
     await page.setContent(htmlTemplate);
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-    });
+    const pdfBuffer = Buffer.from(
+      await page.pdf({
+        format: "A4",
+        printBackground: true,
+      })
+    );
 
     await browser.close();
     // await fs.rm(userDataDir, { recursive: true });
 
-    const smtpTransport = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.PASSWORD,
-      },
-    });
-
-    const options = {
-      from: process.env.EMAIL,
+    const { data, error } = await resend.emails.send({
+      from: "Acme <onboarding@resend.dev>",
       to: email,
-      subject: "Invoice from MutaEngine",
+      subject: "Password Reset Code",
+      html: `<div
+      class="container"
+      style="font-family: 'Roboto', sans-serif; margin: 0 auto"
+    >
+      <div class="head" style="display: flex; align-items: center">
+        <h2 style="margin: 0;padding: 0;margin-top: 5px;margin-left: 10px;padding-bottom: 16px">
+          Please find the attached invoice
+        </h2>
+      </div>
+      <div
+        class="row"
+        style="
+              padding: 1rem 0;
+              border-top: 1px solid #e5e5e5;
+              border-bottom: 1px solid #e5e5e5;
+              padding-top: 0;
+            "
+      >
+        <div class="col-12" style="text-align: center">
+          <img
+            src="https://media.istockphoto.com/id/1338629648/vector/mail-approved-vector-flat-conceptual-icon-style-illustration-eps-10-file.jpg?s=612x612&w=0&k=20&c=o6AcZk3hB6ShxOzmssuOcsfh0QYEQVJ0nCuEZZj1_nQ="
+            alt="img"
+            style="width: 200px;mix-blend-mode: multiply"
+          />
+          <p style="font-weight: bold; padding: 0; margin: 0">
+            Hey ${name}, Thank you for shopping with us.
+          </p>
+          <p style="padding-bottom: 0; margin-bottom: 0">
+            If you haven't requested this mail, then please contact us on our helpline number <span style="font-weight: bold">+91 1234567890</span>.
+          </p>
+          <p
+            style="
+                  padding-bottom: 0;
+                  margin-bottom: 0;
+                  color: #949090;
+                  font-size: 0.8rem;
+                "
+          >
+            Regards, Team <span style="color: #ff5c35">MutaEngine</span>
+          </p>
+        </div>
+      </div>
+    </div>`,
+
       attachments: [
         {
-          filename: "invoice.pdf",
+          filename: `invoice-${name}-${Date.now()}.pdf`,
           content: pdfBuffer,
-          contentType: "application/pdf",
         },
       ],
-      html: `<div
-        class="container"
-        style="font-family: 'Roboto', sans-serif; margin: 0 auto"
-      >
-        <div class="head" style="display: flex; align-items: center">
-          <img
-            src="https://res.cloudinary.com/drt2oqpbj/image/upload/v1688817758/finder_teqvxk.png"
-            alt=""
-            width="40px"
-            height="40px"
-            style="transform: translateY(10px);mix-blend-mode: multiply"
-          />
-          <h2 style="margin: 0;padding: 0;margin-top: 5px;margin-left: 10px;padding-bottom: 16px">
-            Please find the attached invoice
-          </h2>
-        </div>
-        <div
-          class="row"
-          style="
-                padding: 1rem 0;
-                border-top: 1px solid #e5e5e5;
-                border-bottom: 1px solid #e5e5e5;
-                padding-top: 0;
-              "
-        >
-          <div class="col-12" style="text-align: center">
-            <img
-              src="https://media.istockphoto.com/id/1338629648/vector/mail-approved-vector-flat-conceptual-icon-style-illustration-eps-10-file.jpg?s=612x612&w=0&k=20&c=o6AcZk3hB6ShxOzmssuOcsfh0QYEQVJ0nCuEZZj1_nQ="
-              alt="img"
-              style="width: 200px;mix-blend-mode: multiply"
-            />
-            <p style="font-weight: bold; padding: 0; margin: 0">
-              Hey ${name}, Thank you for shopping with us.
-            </p>
-            <p style="padding-bottom: 0; margin-bottom: 0">
-              If you haven't requested this mail, then please contact us on our helpline number <span style="font-weight: bold">+91 1234567890</span>.
-            </p>
-            <p
-              style="
-                    padding-bottom: 0;
-                    margin-bottom: 0;
-                    color: #949090;
-                    font-size: 0.8rem;
-                  "
-            >
-              Regards, Team <span style="color: #ff5c35">MutaEngine</span>
-            </p>
-          </div>
-        </div>
-      </div>`,
-    };
-
-    smtpTransport.sendMail(options, (err, res) => {
-      if (err) return err;
-      return res;
     });
+
+
+    if (error) {
+      return console.error({ error });
+    }
 
     return pdfBuffer;
   } catch (error) {

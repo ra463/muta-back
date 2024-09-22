@@ -10,6 +10,6 @@ const router = express.Router();
 
 router.post("/create-order", auth, createOrder);
 router.get("/get-key", auth, getAPIKey);
-router.post("/verify-payment", auth, verifyPayment);
+router.post("/verify-payment", verifyPayment);
 
 module.exports = router;
